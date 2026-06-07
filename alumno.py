@@ -1,3 +1,15 @@
+"""
+Alumno: Alex Muñoz Paton
+
+Módulo para el tratamiento de las notas de los alumnos.
+Contiene la clase Alumno y la función leeAlumnos() para leer
+ficheros de texto con datos de alumnos usando expresiones regulares.
+"""
+
+import re
+import doctest
+
+
 class Alumno:
     """
     Clase usada para el tratamiento de las notas de los alumnos. Cada uno
@@ -42,3 +54,52 @@ class Alumno:
         completo y la nota media del alumno con un decimal.
         """
         return f'{self.numIden}\t{self.nombre}\t{self.media():.1f}'
+
+
+def leeAlumnos(ficAlum):
+    """
+    Lee un fichero de texto con los datos de todos los alumnos y devuelve
+    un diccionario en el que la clave es el nombre de cada alumno y su
+    contenido el objeto Alumno correspondiente.
+
+    Cada línea del fichero contiene: numIden, nombre (dos o más palabras)
+    y una lista de notas, separados por espacios y/o tabuladores.
+
+    >>> alumnos = leeAlumnos('alumnos.txt')
+    >>> for alumno in alumnos:
+    ...     print(alumnos[alumno])
+    ...
+    171     Blanca Agirrebarrenetse 9.5
+    23      Carles Balcell de Lara 4.9
+    68      David Garcia Fuster     7.0
+    """
+    alumnos = {}
+    # Patrón: número de identificación, nombre (2+ palabras), notas (números reales)
+    patron = re.compile(
+        r'^(\d+)'                          # numIden: uno o más dígitos
+        r'[\s]+'                           # separador
+        r'((?:[A-Za-záéíóúüñÁÉÍÓÚÜÑ]+'   # primera palabra del nombre
+        r'(?:[\s]+[A-Za-záéíóúüñÁÉÍÓÚÜÑ]+)+))'  # resto de palabras del nombre
+        r'[\s]+'                           # separador
+        r'([\d.,\s\t]+)$'                 # notas
+    )
+    patron_nota = re.compile(r'\d+(?:[.,]\d+)?')
+
+    with open(ficAlum, encoding='utf-8') as f:
+        for linea in f:
+            linea = linea.strip()
+            if not linea:
+                continue
+            m = patron.match(linea)
+            if m:
+                num_iden = int(m.group(1))
+                nombre = m.group(2).strip()
+                notas_str = m.group(3)
+                notas = [float(n.replace(',', '.'))
+                         for n in patron_nota.findall(notas_str)]
+                alumnos[nombre] = Alumno(nombre, num_iden, notas)
+    return alumnos
+
+
+if __name__ == '__main__':
+    doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE, verbose=True)
